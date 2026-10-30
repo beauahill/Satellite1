@@ -33,6 +33,8 @@ import cadquery as cq
 # =============================================================================
 V_NET_L = 1.80            # net air volume behind the driver (RS100-4: Qtc ~0.70, F3 ~115 Hz)
 DRIVER_DISP_L = 0.10      # driver displacement estimate (magnet + basket); water-test to refine
+DAMPING_DISP_L = 0.10     # net displacement of wall damping: 1/2" open-cell foam on the back wall
+                          # (~0.30 L, about half counts as solid) + 2 mm butyl on both side walls
 
 # =============================================================================
 # 2. DRIVER  (Dayton RS100-4, Dayton spec page; bolt circle is third-party -> verify)
@@ -220,12 +222,12 @@ def air_volume_l(h_cav, z_drv):
     if PORT_ENABLE:
         t, bo = port_solid(h_cav)
         v -= t.val().Volume() - bo.val().Volume()
-    return v * 1e-6 - DRIVER_DISP_L
+    return v * 1e-6 - DRIVER_DISP_L - DAMPING_DISP_L
 
 
 def solve_cavity_height():
     z_drv = WALL_BOT + DRIVER_Z_ABOVE_FLOOR + DRIVER_OD / 2
-    h = 1e6 * (V_NET_L + DRIVER_DISP_L) / (CAV_W * (CAV_Y1 - CAV_Y0))
+    h = 1e6 * (V_NET_L + DRIVER_DISP_L + DAMPING_DISP_L) / (CAV_W * (CAV_Y1 - CAV_Y0))
     for _ in range(6):
         err = V_NET_L - air_volume_l(h, z_drv)
         h += 1e6 * err / (CAV_W * (CAV_Y1 - CAV_Y0))
@@ -305,7 +307,7 @@ def baffle():
         a = math.radians(DRIVER_HOLE_ANGLE0 + 360 * k / DRIVER_HOLES)
         x, z = DRIVER_BCD / 2 * math.cos(a), Z_DRV + DRIVER_BCD / 2 * math.sin(a)
         h = cq.Workplane("XZ").workplane(offset=D / 2 - FLANGE_RECESS).center(x, z) \
-            .circle(DRIVER_PILOT_D / 2).extrude(-(BAFFLE_T - 1.5 - FLANGE_RECESS))
+            .circle(DRIVER_PILOT_D / 2).extrude(-(BAFFLE_T - 1.0 - FLANGE_RECESS))
         b = b.cut(h)
     return b
 
@@ -456,7 +458,8 @@ def parts():
 
 def summary():
     v = air_volume_l(H_CAV, Z_DRV)
-    print(f"net air volume  : {v:.3f} L (target {V_NET_L} L, driver disp {DRIVER_DISP_L} L assumed)")
+    print(f"net air volume  : {v:.3f} L (target {V_NET_L} L; driver {DRIVER_DISP_L} L and damping "
+          f"{DAMPING_DISP_L} L subtracted)")
     print(f"chamber         : {W:.0f} x {D:.0f} x {H_CH:.1f} mm (cavity height {H_CAV:.1f})")
     print(f"overall height  : {Z_TOP:.1f} mm   driver centre z={Z_DRV:.1f}")
     mic_z = Z_TOP
@@ -473,9 +476,14 @@ def summary():
 
 
 def export(outdir):
+    """STL per part in print orientation; STEP per part in assembled (use) position so the
+    files line up when imported together into Fusion 360; plus one assembly STEP."""
     os.makedirs(outdir, exist_ok=True)
+    stepdir = os.path.join(outdir, "step")
+    os.makedirs(stepdir, exist_ok=True)
     asm = cq.Assembly()
     for name, (wp, rot) in parts().items():
+        cq.exporters.export(wp, os.path.join(stepdir, f"{name}.step"))
         s = to_bed(wp, rot)
         bb = s.BoundingBox()
         fits = bb.xlen <= BUILD_VOL[0] and bb.ylen <= BUILD_VOL[1] and bb.zlen <= BUILD_VOL[2]
