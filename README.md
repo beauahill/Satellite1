@@ -6,7 +6,8 @@ A 3D-printable enclosure for the FutureProofHomes Satellite1 PCB dev kit (HAT re
 acoustics/box_design.py      Thiele/Small simulator: sealed/vented, F3, excursion, port speed, amp limits
 acoustics/response_RS100-4.png
 cad/enclosure.py             parametric CadQuery model (all key dimensions at the top), exports STL + STEP
-cad/render.py                renders cad/out/render*.png
+cad/render.py                quick matplotlib section/top views
+cad/render_scene.py + cad/render/   three.js renders: hero, cutaway, top, exploded assembly diagram
 cad/out/                     print-ready STLs (print orientation), step/ per-part STEP (assembled position), assembly.step
 tools/board_extract/         scripts that pulled every board dimension out of FPH's STEP files
 ```
@@ -22,6 +23,30 @@ python3 cad/enclosure.py --check path/to/rev6.1hat3D.step   # interference check
 ```
 
 ---
+
+## Renders
+
+| | |
+|---|---|
+| ![hero](cad/out/render_hero.png) | ![cutaway](cad/out/render_cutaway.png) |
+| ![top](cad/out/render_top.png) | |
+
+**Assembly diagram**
+
+![exploded assembly](cad/out/render_exploded.png)
+
+How the renders were made:
+- The boards are FPH's own STEP models.
+- The RS100-4 is a representative model built to Dayton's published outline (OD 98 mm, cutout 77.2 mm, depth 51 mm).
+- The Core's orientation under the HAT is illustrative.
+
+To regenerate:
+
+```bash
+python3 cad/render_scene.py --hat path/to/rev6.1hat3D.step --core path/to/rev5.1core3D.step
+npm install three@0.160.0            # Playwright + Chromium also required
+THREE_DIR=$PWD/node_modules/three node cad/render/render.mjs
+```
 
 ## 1. Board facts (from FPH sources, not guessed)
 

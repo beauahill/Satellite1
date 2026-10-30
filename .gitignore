@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+cad/out/scene/
+cad/render/node_modules/
