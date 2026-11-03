@@ -19,7 +19,7 @@ pip install cadquery numpy matplotlib
 python3 acoustics/box_design.py                       # all drivers
 python3 acoustics/box_design.py --driver RS100-4 --vb 1.8 --fill 1.1 --plot
 python3 cad/enclosure.py                              # STLs + STEP into cad/out
-python3 cad/enclosure.py --check path/to/rev6.1hat3D.step   # interference check vs FPH HAT model
+python3 cad/fit_check.py --hat path/to/rev6.1hat3D.step --core path/to/rev5.1core3D.step   # full board fit check
 ```
 
 ---
@@ -77,7 +77,27 @@ Sources:
 | Mono or stereo | **Mono to the speaker.** I2S is stereo, but the TAS2780 takes one TDM slot. The 3.5 mm line out (PCM5122) is stereo | firmware `speaker.yaml`, `tas2780.cpp` |
 | Supply | FPH recommends a 30 W USB-C PD adapter; under-powering causes distortion | docs FAQ |
 
-`cad/enclosure.py --check` loads FPH's HAT STEP, places it in the head, and intersects every component with the head and button caps. Result: **no interference**. A deliberately broken copy, with the board pushed 1 mm into the rear wall, does report interference, so the check is live.
+`cad/fit_check.py` loads FPH's HAT and Core STEP files and places them exactly as assembled:
+- **HAT:** top face seated on the head bosses.
+- **Core:** rotated 180° so its 4 holes line up with HAT holes (±29, −24.5) and (±29, −1.5), with its header in the HAT's J3, 10 mm below the HAT top.
+- **Screws:** all four modelled.
+
+It then checks every one of the 253 board components against every printed part, gasket and screw, plus named clearances. **Result: all pass.**
+
+| Check | Result |
+|---|---|
+| Board edge to walls | 0.40 mm |
+| 3.5 mm jack | Protrudes 0.83 mm into its cutout, 0.52 mm clear |
+| USB-C ports | Centred on their cutouts within 0.1 mm |
+| Mic gaskets | Fully on each mic body (≥0.17 mm margin) |
+| Button pre-travel | 0.31 mm |
+| LEDs | All 24 under the light window, none under a bridge |
+| Sensors | Centred under their holes |
+| Core header | Over the HAT's J3 |
+| Core to chamber roof | 5.6 mm |
+| Screw heads to roof | 3.2 mm |
+
+The build also checks that chamber + baffle equal the unsplit box with every feature applied once, which catches any feature cut into only one side of the glue joint.
 
 ## 2. What FPH did in the Sat1.1 Smart Speaker, and why I went the other way
 
@@ -179,7 +199,7 @@ Every STEP re-imports as a single valid solid.
 | `diffuser` | 1 | translucent PETG or white PLA | visible face on bed | Drops into the LED counterbore and slots |
 | `button_cap` | 4 | same as head | top down | Captured between top plate and switch, 0.2 mm pre-travel gap |
 | `isolator` | 4 | TPU 95A HF | flat, spokes on bed | Ring sits in the roof socket; hub carries the head pin; 3 spokes are the springs |
-| `mic_gasket_x4` | 1 set of 4 | TPU 95A, or punch from 1.5 mm closed-cell foam | flat | OD 2.8 / ID 1.4 / 1.5 mm free height. Seals each mic port to its hole. All 4 ship as one object: a single gasket is 6.9 mm³, and **Bambu Studio silently scales any object under 8 mm³ by 25.4** (it assumes inches). If you split the set into separate objects, Bambu will rescale them |
+| `mic_gasket_x4` | 1 set of 4 | TPU 95A, or punch from 1.5 mm closed-cell foam (2.5 mm punch outside, 1.2–1.5 mm inside) | flat | OD 2.5 / ID 1.3 / 1.5 mm free height. Seals each mic port to its hole. All 4 ship as one object: a single gasket is 6.9 mm³, and **Bambu Studio silently scales any object under 8 mm³ by 25.4** (it assumes inches). If you split the set into separate objects, Bambu will rescale them |
 | `driver_gasket` | 1 | TPU 95A, or the gasket that ships with the driver | flat | |
 
 Every part fits the **H2S build volume (340 × 320 × 340 mm)**. The largest is the chamber at 130 × 218 × 86 mm. Nothing needs supports; the overhangs that remain are 45° chamfers and short bridges (I/O cutouts, gland, sockets).
@@ -272,7 +292,7 @@ Prices are from search snapshots; check stock before ordering. Links that aren't
 | 3 | 1 piece | Sonic Barrier ½" acoustic foam with PSA, 18 × 24" (one sheet does ~12 speakers) | Parts Express **260-520** | [Parts Express](https://parts-express.com/Sonic-Barrier-1-2-Acoustic-Foam-w-PSA-18-x-24-260-520) | $1 (sheet ~$11) |
 | 4 | 2 sheets | Butyl/foil damping sheet, 10 × 10" (kit has 2) | Rockford Fosgate **RFDS-SPEAKER** | [Rockford Fosgate](https://rockfordfosgate.com/products/details/rfds-speaker) | ~$15/kit |
 | 5 | 6 | Driver screws: M3 × 12 pan head, thread-forming for plastic, stainless | McMaster **96817A912** | [McMaster](https://www.mcmaster.com/product/96817A912/) | ~$1 |
-| 6 | 4 | HAT screws: M3 × 8 pan head, thread-forming for plastic (45°, six-lobe) | Fastener Superstore **547301** (zinc) | [Fastener Superstore](https://www.fastenersuperstore.com/products/547301/thread-forming-screws) | ~$1 |
+| 6 | 2 + 2 | HAT screws, pan head, thread-forming for plastic (45°, six-lobe): **2 × M3 × 8** for the rear holes, **2 × M3 × 16** for the front holes (they pass through the Core too) | Fastener Superstore **547301** is the M3 × 8; pick the 16 mm length in the same series | [Fastener Superstore](https://www.fastenersuperstore.com/products/547301/thread-forming-screws) | ~$1 |
 | 7 | 4 | Feet: 3M Bumpon SJ5312, Ø12.7 × 3.6 mm, polyurethane, clear | 3M **SJ5312** (DigiKey 3866068) | [DigiKey](https://www.digikey.com/en/products/detail/3m/SJ5312/3866068) (URL built from DigiKey's part ID; only a regional DigiKey page turned up in search) | ~$1 |
 | 8 | 0.4 m | 20 AWG 2-conductor speaker wire | Encore Wire **C1360.21.90** (DigiKey 5126287, 50 ft) | [DigiKey](https://www.digikey.com.au/en/products/detail/encore-wire/C1360-21-90/5126287) | ~$1 |
 | 9 | 1 | JST-XH 2-pin pigtail for the HAT speaker connector | as recommended by FPH (no part number) | [FPH-recommended listing](https://amzn.to/4ly9LDA) | ~$1 |
@@ -312,7 +332,7 @@ Before ordering screws, measure the RS100-4 flange holes. The baffle pilots are 
 
 10. Snap in the diffuser and the 4 button caps.
 11. Stick a mic gasket centred on each mic boss.
-12. Plug the Core into the HAT. Lay the HAT face-down into the head with the flat I/O edge against the rear cutouts. Fasten it with 4 × M3 × 8 thread-forming screws, snug only.
+12. Plug the Core into the HAT. It sits under the front half of the HAT, and its 4 holes line up with the HAT's front holes. Lay the HAT face-down into the head with the flat I/O edge against the rear cutouts. Fasten it with **M3 × 8** in the two rear holes, and **M3 × 16** through Core + HAT in the two front holes, as in FPH's OEM enclosure. Snug only: the header is the spacer between the boards, so don't crank the front screws.
 13. Press each button and check it clicks.
 14. On a Sat1.1 kit, stick the external WiFi antenna to the inside of a head side wall. It's plastic, so there's no shielding. Clip its IPEX connector to the Core.
 

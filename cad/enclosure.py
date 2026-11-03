@@ -116,9 +116,14 @@ IO_GAP = 0.4               # HAT flat edge -> inner face of rear wall
 SHADOW_GAP = 1.5           # visible reveal between head and chamber (head floats)
 HAT_BOSS_D = 5.5
 HAT_PILOT_D = 2.7          # M3 thread-forming (FPH OEM uses M3x10 into 2.75)
+HAT_PILOT_DEPTH = 7.0      # into boss + top plate (leaves 1.8 mm of plate above)
+CORE_T = 1.51              # Core rev5.1 PCB
+HAT_SCREW_REAR = 8.0       # rear holes (y=+24.5): HAT only
+HAT_SCREW_FRONT = 16.0     # front holes (y=-24.5): the Core's own holes sit under them, so the
+                           # screw passes Core + header gap + HAT (as in FPH's OEM enclosure)
 MIC_HOLE_D = 1.0           # through the top plate, short to keep pipe resonance > 15 kHz
 MIC_BOSS_D = 4.0
-MIC_GASKET_OD, MIC_GASKET_ID, MIC_GASKET_T = 2.8, 1.4, 1.5   # compressed to MIC_GASKET_COMP
+MIC_GASKET_OD, MIC_GASKET_ID, MIC_GASKET_T = 2.5, 1.3, 1.5   # compressed to MIC_GASKET_COMP
 MIC_GASKET_COMP = 1.0
 LED_SLOT_RI, LED_SLOT_RO = 39.8, 42.2
 LED_CBORE_RI, LED_CBORE_RO, LED_CBORE_DEPTH = 38.8, 43.2, 1.0
@@ -127,7 +132,7 @@ LED_BRIDGE_W = 3.0
 BTN_HOLE_D = 10.4
 BTN_CAP_D, BTN_FLANGE_D, BTN_FLANGE_T, BTN_STEM_D = 10.0, 13.0, 0.8, 4.0
 BTN_PROUD = 0.4
-BTN_TRAVEL_CLEAR = 0.2
+BTN_TRAVEL_CLEAR = 0.4    # model gap 0.31 mm with the 1.51 mm rev6.1 PCB
 SENSOR_HOLE_D = 2.5
 USB_CUT_W, USB_CUT_H, USB_CUT_R = 12.6, 7.2, 2.5   # passes a typical USB-C overmold
 JACK_CUT_W, JACK_CUT_H, JACK_CUT_R = 8.6, 6.6, 2.0   # jack body pokes 0.8 mm into the wall
@@ -271,10 +276,8 @@ def cut_iso_sockets(part):
     return part
 
 
-def chamber():
-    keep = cq.Workplane("XY").box(W + 2, D, H_CH + 2, centered=(True, False, False)) \
-        .translate((0, Y_SPLIT, -1))
-    c = shell().intersect(keep)
+def chamber_features(c):
+    """Every cut/add that belongs to the chamber side (also used on the unsplit reference body)."""
     c = cut_iso_sockets(c)
     # speaker wire gland
     c = c.cut(cylinder(GLAND_D, TOP_WALL + 2, GLAND[0], GLAND[1], ZC - TOP_WALL - 1))
@@ -294,10 +297,14 @@ def chamber():
     return c
 
 
-def baffle():
-    keep = cq.Workplane("XY").box(W + 2, BAFFLE_T, H_CH + 2, centered=(True, False, False)) \
-        .translate((0, -D / 2, -1))
-    b = shell().intersect(keep).union(tongue_solid(H_CAV))
+def chamber():
+    keep = cq.Workplane("XY").box(W + 2, D, H_CH + 2, centered=(True, False, False)) \
+        .translate((0, Y_SPLIT, -1))
+    return chamber_features(shell().intersect(keep))
+
+
+def baffle_features(b):
+    """Every cut that belongs to the baffle side (also used on the unsplit reference body)."""
     b = cut_iso_sockets(b)
     # driver cutout, rear chamfer, optional flush recess
     cut = cq.Workplane("XZ").workplane(offset=D / 2).center(0, Z_DRV) \
@@ -320,6 +327,12 @@ def baffle():
     return b
 
 
+def baffle():
+    keep = cq.Workplane("XY").box(W + 2, BAFFLE_T, H_CH + 2, centered=(True, False, False)) \
+        .translate((0, -D / 2, -1))
+    return baffle_features(shell().intersect(keep).union(tongue_solid(H_CAV)))
+
+
 def head():
     h_out = Z_TOP - (ZC + SHADOW_GAP)
     z0 = ZC + SHADOW_GAP
@@ -333,7 +346,7 @@ def head():
     for (x, y) in HAT_MOUNT_HOLES:
         X, Y = hat(x, y)
         hd = hd.union(cylinder(HAT_BOSS_D, GAP_TOP + 0.5, X, Y, Z_HT))
-        hd = hd.cut(cylinder(HAT_PILOT_D, GAP_TOP - 0.5, X, Y, Z_HT - 0.01))
+        hd = hd.cut(cylinder(HAT_PILOT_D, HAT_PILOT_DEPTH, X, Y, Z_HT - 0.01))
     # mic bosses + holes
     boss_bot = Z_HT + MIC_TOP_ABOVE_PCB + MIC_GASKET_COMP
     for (x, y) in MIC_PORTS:
@@ -496,6 +509,12 @@ def summary():
     assert BAY_CLEAR >= BELOW_PCB_STACK + 2, "bay too shallow for Core stack"
     assert -D / 2 + DRIVER_DEPTH < CAV_Y1 - 5, "driver too deep for box"
     check_joint_features()
+    gap = BELOW_PCB_STACK - HAT_T - CORE_T
+    tip_front = HAT_SCREW_FRONT - (CORE_T + gap + HAT_T)
+    tip_rear = HAT_SCREW_REAR - HAT_T
+    print(f"HAT screws: front M3x{HAT_SCREW_FRONT:.0f} engages {tip_front:.1f} mm, rear M3x{HAT_SCREW_REAR:.0f} "
+          f"engages {tip_rear:.1f} mm (pilot {HAT_PILOT_DEPTH} mm)")
+    assert 4.0 <= tip_front <= HAT_PILOT_DEPTH - 0.5 and 4.0 <= tip_rear <= HAT_PILOT_DEPTH - 0.5, "HAT screw length"
 
 
 def check_joint_features():
@@ -519,6 +538,12 @@ def check_joint_features():
                         bad.append((round(x), round(y), p))
     assert not bad, f"isolator socket blocked at {bad}"
     print("isolator sockets open across the baffle joint: OK")
+    # generic: unsplit body with every feature applied once must equal chamber + baffle
+    ref = baffle_features(chamber_features(shell().union(tongue_solid(H_CAV)))).val()
+    dv = solids[0].Volume() + solids[1].Volume() - ref.Volume()
+    assert abs(dv) < 1.0, f"chamber+baffle differ from the unsplit body by {dv:.1f} mm3: " \
+                          "a feature crossing the joint is cut into only one part"
+    print(f"chamber + baffle == unsplit body with all features (diff {dv:+.3f} mm3): OK")
 
 
 def export(outdir):
