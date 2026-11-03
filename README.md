@@ -179,7 +179,7 @@ Every STEP re-imports as a single valid solid.
 | `diffuser` | 1 | translucent PETG or white PLA | visible face on bed | Drops into the LED counterbore and slots |
 | `button_cap` | 4 | same as head | top down | Captured between top plate and switch, 0.2 mm pre-travel gap |
 | `isolator` | 4 | TPU 95A HF | flat, spokes on bed | Ring sits in the roof socket; hub carries the head pin; 3 spokes are the springs |
-| `mic_gasket` | 4 | TPU 95A, or punch from 1.5 mm closed-cell foam | flat | OD 2.8 / ID 1.4. Seals each mic port to its hole |
+| `mic_gasket_x4` | 1 set of 4 | TPU 95A, or punch from 1.5 mm closed-cell foam | flat | OD 2.8 / ID 1.4 / 1.5 mm free height. Seals each mic port to its hole. All 4 ship as one object: a single gasket is 6.9 mm³, and **Bambu Studio silently scales any object under 8 mm³ by 25.4** (it assumes inches). If you split the set into separate objects, Bambu will rescale them |
 | `driver_gasket` | 1 | TPU 95A, or the gasket that ships with the driver | flat | |
 
 Every part fits the **H2S build volume (340 × 320 × 340 mm)**. The largest is the chamber at 130 × 218 × 86 mm. Nothing needs supports; the overhangs that remain are 45° chamfers and short bridges (I/O cutouts, gland, sockets).

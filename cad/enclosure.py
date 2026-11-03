@@ -430,6 +430,18 @@ def mic_gasket(x=0.0, y=0.0, compressed=True):
     return g.translate((X, Y, Z_HT + MIC_TOP_ABOVE_PCB))
 
 
+def mic_gasket_plate(pitch=6.0):
+    """All 4 mic gaskets at free height as ONE object. A single gasket is ~6.9 mm3; Bambu Studio
+    silently scales any object under 8 mm3 by 25.4 (assumes inches), so they ship as a set."""
+    g = cq.Workplane("XY").circle(MIC_GASKET_OD / 2).circle(MIC_GASKET_ID / 2).extrude(MIC_GASKET_T)
+    plate = None
+    for i in range(2):
+        for j in range(2):
+            gi = g.translate(((i - 0.5) * pitch, (j - 0.5) * pitch, 0))
+            plate = gi if plate is None else plate.union(gi)
+    return plate
+
+
 def driver_gasket():
     g = cq.Workplane("XZ").circle(DRIVER_OD / 2).circle(DRIVER_CUTOUT_D / 2 + 1.0).extrude(1.0)
     return g.translate((0, -D / 2, Z_DRV))
@@ -460,7 +472,7 @@ def parts():
         "diffuser": (diffuser(), ((1, 0, 0), 180)),      # visible face on the bed
         "button_cap": (button_cap(*BUTTONS[0]), ((1, 0, 0), 180)),
         "isolator": (isolator(-ISO_X, -ISO_Y), None),
-        "mic_gasket": (mic_gasket(*MIC_PORTS[0], compressed=False), None),
+        "mic_gasket_x4": (mic_gasket_plate(), None),
         "driver_gasket": (driver_gasket(), ((1, 0, 0), 90)),
     }
     return p
@@ -519,6 +531,7 @@ def export(outdir):
     for name, (wp, rot) in parts().items():
         cq.exporters.export(wp, os.path.join(stepdir, f"{name}.step"))
         s = to_bed(wp, rot)
+        assert s.Volume() >= 8.0, f"{name}: {s.Volume():.1f} mm3 < 8 mm3; Bambu Studio would auto-scale it x25.4"
         bb = s.BoundingBox()
         fits = bb.xlen <= BUILD_VOL[0] and bb.ylen <= BUILD_VOL[1] and bb.zlen <= BUILD_VOL[2]
         cq.exporters.export(cq.Workplane().add(s), os.path.join(outdir, f"{name}.stl"),
