@@ -414,9 +414,11 @@ def isolator(x=0.0, y=0.0):
     return iso.translate((x, y, z0))
 
 
-def mic_gasket(x=0.0, y=0.0):
+def mic_gasket(x=0.0, y=0.0, compressed=True):
+    """compressed=True: installed height (assembly/fit check). False: free height to print/cut."""
     X, Y = hat(x, y)
-    g = cq.Workplane("XY").circle(MIC_GASKET_OD / 2).circle(MIC_GASKET_ID / 2).extrude(MIC_GASKET_COMP)
+    t = MIC_GASKET_COMP if compressed else MIC_GASKET_T
+    g = cq.Workplane("XY").circle(MIC_GASKET_OD / 2).circle(MIC_GASKET_ID / 2).extrude(t)
     return g.translate((X, Y, Z_HT + MIC_TOP_ABOVE_PCB))
 
 
@@ -450,7 +452,7 @@ def parts():
         "diffuser": (diffuser(), ((1, 0, 0), 180)),      # visible face on the bed
         "button_cap": (button_cap(*BUTTONS[0]), ((1, 0, 0), 180)),
         "isolator": (isolator(-ISO_X, -ISO_Y), None),
-        "mic_gasket": (mic_gasket(*MIC_PORTS[0]), None),
+        "mic_gasket": (mic_gasket(*MIC_PORTS[0], compressed=False), None),
         "driver_gasket": (driver_gasket(), ((1, 0, 0), 90)),
     }
     return p
