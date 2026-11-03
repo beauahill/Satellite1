@@ -229,12 +229,14 @@ Every part fits the **H2S build volume (340 × 320 × 340 mm)**. The largest is 
 
 | Part | Layer | Walls | Top / bottom | Infill | Notes |
 |---|---|---|---|---|---|
-| chamber | 0.20 mm | 6 (≈2.5 mm) | 6 / 6 | 40 % gyroid | Gyroid's curved cells break up panel modes. Wall order inner/outer/inner for stiffness. 5 mm brim, since it's a tall print on a small base. Slow outer walls for appearance |
+| chamber | 0.20 mm | 9 (makes the 4 mm walls solid) | 6 / 6 | 40 % gyroid | The gyroid only fills the 10 mm roof and 5 mm floor; its curved cells break up panel modes. 5 mm brim, since it's a tall print on a small base. Hide the seam on a corner that faces the floor once assembled. Outer wall ≤ 150 mm/s |
 | baffle | 0.20 mm | 6 | 6 / 6 | **100 %** | Most mass and stiffness exactly where the driver pushes. Front face on a smooth or textured PEI plate for the visible finish |
-| head | 0.16 mm | 3 | 5 / 5 | 25 % gyroid | Visible part. Ironing on the top face optional |
+| head | 0.16 mm | 3 | 5 / 5 | 25 % gyroid | Visible part. Its top face is on the plate, so the plate texture is the finish |
 | button caps | 0.12 mm | 3 | — | 100 % | |
 | diffuser | 0.16 mm | 2 | — | 100 % | Translucent PETG. A 0.12 mm first layer gives a frosted look |
 | isolators, gaskets | 0.20 mm | 2 | — | 100 % | TPU 95A HF, ≤ 3 mm³/s, no cooling fan for the first 2 layers, glue stick on the plate |
+
+**All parts:** Arachne wall generator. It fills the narrow tongue, pilot holes and rounded corners without gaps, which helps airtightness. **No ironing:** every visible face prints against the plate, and ironing the chamber's glue rim would only weaken the epoxy joint.
 
 Filament per unit: about **650–750 g PETG** (chamber ~350 g, baffle ~240 g, head ~60 g), **~10 g TPU**, **~3 g translucent**. Two speakers come to roughly 1.5 kg of PETG, so buy two 1 kg spools.
 
