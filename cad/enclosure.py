@@ -135,6 +135,7 @@ IO_CHAMFER = 0.8
 
 ISO_INSET = 14.0           # isolator / post centres at (+-(W/2-ISO_INSET), +-(D/2-ISO_INSET))
 ISO_OD, ISO_RING_W, ISO_RING_H = 22.0, 1.5, 3.0
+ISO_RING_PRESS = 0.5       # isolator ring OD = ISO_OD + this -> 0.2 mm press fit in the 22.3 socket
 ISO_HUB_D, ISO_HUB_H, ISO_HUB_PROUD = 8.0, 5.0, 2.0
 ISO_SPOKES, ISO_SPOKE_W, ISO_SPOKE_T = 3, 2.5, 1.0
 ISO_POCKET_EXTRA = 2.5
@@ -407,7 +408,7 @@ def button_cap(x=0.0, y=0.0):
 def isolator(x=0.0, y=0.0):
     """Ring seated in the roof socket; hub carries the head pin; spokes are the springs."""
     z0 = ZC - ISO_RING_H
-    ring = (cq.Workplane("XY").circle(ISO_OD / 2).circle(ISO_OD / 2 - ISO_RING_W)
+    ring = (cq.Workplane("XY").circle((ISO_OD + ISO_RING_PRESS) / 2).circle(ISO_OD / 2 - ISO_RING_W)
             .extrude(ISO_RING_H))
     hub = cq.Workplane("XY").circle(ISO_HUB_D / 2).circle((PIN_D - PIN_INTERFERENCE) / 2) \
         .extrude(ISO_HUB_H)
