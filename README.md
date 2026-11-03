@@ -201,6 +201,14 @@ Every part fits the **H2S build volume (340 × 320 × 340 mm)**. The largest is 
    - The inside of the head isn't open to the mic.
 6. **Sealed box: no port** anywhere near the head.
 
+### How the head is held on
+
+- **No rigid link to the chamber.** The head rests on the 4 TPU isolators. Each Ø4 head pin presses into an isolator hub (Ø3.7 bore), and each isolator ring presses into a roof socket (22.5 mm ring in a 22.3 mm socket).
+- **Location.** The 4 pins stop the head sliding or twisting.
+- **Removal.** Lift straight up to service the board; it's held by friction only.
+- **Checked dimensions.** The head footprint (130 × 94 mm) matches the glued chamber + baffle exactly, with 0.00 mm offset on all four sides. Nothing touches except the pins in the hubs: the skirt clears the roof by 1.5 mm and the pin tips clear the pocket floor by 1.0 mm.
+- **Why it can look offset.** On its own the chamber is only 86 mm deep. Until the baffle is glued on, the head appears to overhang the front by 8 mm.
+
 ### Key parameters (top of `enclosure.py`)
 
 | Parameter | What it controls |
@@ -298,7 +306,7 @@ Before ordering screws, measure the RS100-4 flange holes. The baffle pilots are 
 
 **Base and isolators**
 
-9. Press the 4 isolators into the roof sockets, spokes down. Stick the 4 bumpers into the base recesses.
+9. Press the 4 isolators into the roof sockets, spokes down. The rings are a 0.2 mm press fit; the front two straddle the baffle joint. For a permanent fit, put a thin bead of flexible adhesive (E6000 or silicone) on the socket ledge only, never on the spokes. Stick the 4 bumpers into the base recesses.
 
 **Head** (on the bench, upside down)
 
