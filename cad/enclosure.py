@@ -258,17 +258,23 @@ def shell():
     return s
 
 
+def cut_iso_sockets(part):
+    """Isolator sockets (ring seat) + pockets (hub/spokes free to move). Applied to BOTH the
+    chamber and the baffle: the front sockets straddle the glue joint at Y_SPLIT."""
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x, y = sx * ISO_X, sy * ISO_Y
+            part = part.cut(cylinder(ISO_OD + 0.3, ISO_RING_H + 1, x, y, ZC - ISO_RING_H))
+            part = part.cut(cylinder(ISO_OD - 2 * ISO_RING_W, ISO_RING_H + ISO_POCKET_EXTRA + 1, x, y,
+                                     ZC - ISO_RING_H - ISO_POCKET_EXTRA))
+    return part
+
+
 def chamber():
     keep = cq.Workplane("XY").box(W + 2, D, H_CH + 2, centered=(True, False, False)) \
         .translate((0, Y_SPLIT, -1))
     c = shell().intersect(keep)
-    # isolator sockets (ring seat) + pockets (hub/spokes free to move)
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            x, y = sx * ISO_X, sy * ISO_Y
-            c = c.cut(cylinder(ISO_OD + 0.3, ISO_RING_H + 1, x, y, ZC - ISO_RING_H))
-            c = c.cut(cylinder(ISO_OD - 2 * ISO_RING_W, ISO_RING_H + ISO_POCKET_EXTRA + 1, x, y,
-                               ZC - ISO_RING_H - ISO_POCKET_EXTRA))
+    c = cut_iso_sockets(c)
     # speaker wire gland
     c = c.cut(cylinder(GLAND_D, TOP_WALL + 2, GLAND[0], GLAND[1], ZC - TOP_WALL - 1))
     # bumper recesses
@@ -291,6 +297,7 @@ def baffle():
     keep = cq.Workplane("XY").box(W + 2, BAFFLE_T, H_CH + 2, centered=(True, False, False)) \
         .translate((0, -D / 2, -1))
     b = shell().intersect(keep).union(tongue_solid(H_CAV))
+    b = cut_iso_sockets(b)
     # driver cutout, rear chamfer, optional flush recess
     cut = cq.Workplane("XZ").workplane(offset=D / 2).center(0, Z_DRV) \
         .circle(DRIVER_CUTOUT_D / 2).extrude(-(BAFFLE_T + 1))
@@ -475,6 +482,30 @@ def summary():
     print(f"basket clearance to back wall: {CAV_Y1 - (-D / 2 + DRIVER_DEPTH):.1f} mm")
     assert BAY_CLEAR >= BELOW_PCB_STACK + 2, "bay too shallow for Core stack"
     assert -D / 2 + DRIVER_DEPTH < CAV_Y1 - 5, "driver too deep for box"
+    check_joint_features()
+
+
+def check_joint_features():
+    """Probe every isolator socket in the glued chamber+baffle: the seat, the pocket and the
+    rim facing the front must all be air. Catches features cut into only one of the two parts."""
+    from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+    from OCP.gp import gp_Pnt
+    from OCP.TopAbs import TopAbs_OUT
+    solids = [chamber().val(), baffle().val()]
+    bad = []
+    r_seat, r_pocket = (ISO_OD + 0.3) / 2 - 0.3, (ISO_OD - 2 * ISO_RING_W) / 2 - 0.3
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x, y = sx * ISO_X, sy * ISO_Y
+            probes = [(x, y - r_seat, ZC - 1.5), (x, y + r_seat, ZC - 1.5), (x - r_seat, y, ZC - 1.5),
+                      (x + r_seat, y, ZC - 1.5), (x, y - r_pocket, ZC - ISO_RING_H - 1.0)]
+            for p in probes:
+                for s in solids:
+                    cl = BRepClass3d_SolidClassifier(s.wrapped, gp_Pnt(*p), 1e-4)
+                    if cl.State() != TopAbs_OUT:
+                        bad.append((round(x), round(y), p))
+    assert not bad, f"isolator socket blocked at {bad}"
+    print("isolator sockets open across the baffle joint: OK")
 
 
 def export(outdir):

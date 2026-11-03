@@ -286,7 +286,7 @@ Before ordering screws, measure the RS100-4 flange holes. The baffle pilots are 
 2. Damping, before closing the box:
    - Stick the ½" foam on the back wall.
    - Stick butyl on both side walls; roll it down firmly.
-3. Glue the baffle tongue into the chamber rebate with epoxy around the entire rim. Clamp or weight it face-down on a flat surface. This joint must be airtight. Let it cure fully.
+3. Glue the baffle tongue into the chamber rebate with epoxy around the entire rim. The two front isolator sockets straddle this joint. Wipe any epoxy squeeze-out from inside them before it cures, and check an isolator ring drops in flush. Clamp or weight it face-down on a flat surface. This joint must be airtight. Let it cure fully.
 
 **Driver and wiring**
 
